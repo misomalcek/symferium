@@ -32,9 +32,11 @@ Config: `~/Library/Application Support/Symferium/symferium.toml` (0600). Logs: `
 
 Baselines to beat (llama.cpp b10327, from the brief): prefill 85–110 tok/s; decode 3.1 tok/s long context, 8.3 tok/s short.
 
-## Things to verify on first contact (written from documentation, not yet run on a Mac)
+## Things to verify on first contact
 
-- `llama-server` flags in the default profile: `-fa on`, `--ctx-checkpoints`, `--cache-ram`, `--no-webui`. If the installed build rejects one, edit `engines.llamacpp.args` in Settings.
+Already proven on the GitHub Apple Silicon runner (VirtualMac, M2 Pro, 14 GB): Metal working-set probe, real Hugging Face download with sha256, real llama-server load and answer, restart after `kill -9`, governor refusal. Still from documentation only:
+
+- `llama-server` flags in the default profile (`-fa on`, `--ctx-checkpoints`, `--cache-ram`, `--no-webui`): **confirmed** with Homebrew llama.cpp 0.7.0 on the Apple Silicon CI runner (smoke passed). An older build such as b10327 may still reject one; edit `engines.llamacpp.args` then.
 - `mlx_lm.server` answers `GET /v1/models` (health path of the `mlx` profile); `mlx_vlm.server` answers `/health`.
 - `whisper-server --inference-path /v1/audio/transcriptions` and that `GET /` answers 200 (its health path).
 - The Kokoro sidecar needs a `voices*.bin` next to the `kokoro*.onnx` file.
