@@ -59,7 +59,13 @@ impl Downloads {
         self.jobs
             .lock()
             .values()
-            .map(|j| JobView { id: j.id.clone(), repo: j.repo.clone(), dest: j.dest.clone(), files: j.files.clone(), status: j.status.read().clone() })
+            .map(|j| JobView {
+                id: j.id.clone(),
+                repo: j.repo.clone(),
+                dest: j.dest.clone(),
+                files: j.files.clone(),
+                status: j.status.read().clone(),
+            })
             .collect()
     }
     pub fn cancel(&self, id: &str) -> bool {
@@ -164,10 +170,26 @@ async fn run_job(rt: &Arc<Runtime>, job: &Arc<Job>) -> Result<()> {
                 st.bytes_done = done_before + file_done;
                 st.speed_bps = speed;
             };
-            match fetch_file(&rt.http, &url, &dest, f, &cfg.catalog.hf_token, cfg.download.verify_sha256, &job.cancel, progress, cfg.download.timeout_s).await {
+            match fetch_file(
+                &rt.http,
+                &url,
+                &dest,
+                f,
+                &cfg.catalog.hf_token,
+                cfg.download.verify_sha256,
+                &job.cancel,
+                progress,
+                cfg.download.timeout_s,
+            )
+            .await
+            {
                 Ok(()) => break,
                 Err(e) if job.cancel.is_cancelled() => return Err(e),
-                Err(e) if attempt < cfg.download.retries && !format!("{e:#}").contains("sha256 mismatch") && !format!("{e:#}").contains("HTTP 4") => {
+                Err(e)
+                    if attempt < cfg.download.retries
+                        && !format!("{e:#}").contains("sha256 mismatch")
+                        && !format!("{e:#}").contains("HTTP 4") =>
+                {
                     attempt += 1;
                     tracing::warn!("download {} attempt {attempt}: {e:#}", f.path);
                     tokio::time::sleep(Duration::from_secs((1u64 << attempt.min(5)).min(30))).await;
@@ -249,7 +271,14 @@ pub async fn fetch_file(
         if !append {
             have = 0;
         }
-        let mut out = tokio::fs::OpenOptions::new().create(true).write(true).append(append).truncate(!append).open(&part).await.context("opening .part")?;
+        let mut out = tokio::fs::OpenOptions::new()
+            .create(true)
+            .write(true)
+            .append(append)
+            .truncate(!append)
+            .open(&part)
+            .await
+            .context("opening .part")?;
         let mut stream = resp.bytes_stream();
         let start = Instant::now();
         let mut got = 0u64;
@@ -332,7 +361,19 @@ mod tests {
         assert!(!tmp.path().join("m.gguf.part").exists());
 
         let bad = FileRef { sha256: Some("00".repeat(32)), path: "x.gguf".into(), ..f };
-        let e = fetch_file(&http, &format!("{base}/x.gguf"), &tmp.path().join("x.gguf"), &bad, "", true, &CancellationToken::new(), |_, _| {}, 10).await.unwrap_err();
+        let e = fetch_file(
+            &http,
+            &format!("{base}/x.gguf"),
+            &tmp.path().join("x.gguf"),
+            &bad,
+            "",
+            true,
+            &CancellationToken::new(),
+            |_, _| {},
+            10,
+        )
+        .await
+        .unwrap_err();
         assert!(e.to_string().contains("sha256 mismatch"));
         assert!(!tmp.path().join("x.gguf").exists());
     }

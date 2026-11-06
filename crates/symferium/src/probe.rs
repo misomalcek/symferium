@@ -45,11 +45,7 @@ impl SystemProbe {
         let logical = sys.cpus().len() as u32;
         let brand = sys.cpus().first().map(|c| c.brand().trim().to_string()).unwrap_or_default();
         let mut info = MachineInfo {
-            os: format!(
-                "{} {}",
-                sysinfo::System::name().unwrap_or_default(),
-                sysinfo::System::os_version().unwrap_or_default()
-            ),
+            os: format!("{} {}", sysinfo::System::name().unwrap_or_default(), sysinfo::System::os_version().unwrap_or_default()),
             cpu_brand: brand,
             logical_cpus: logical,
             perf_cores: logical,

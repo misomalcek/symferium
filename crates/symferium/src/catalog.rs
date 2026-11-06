@@ -77,7 +77,8 @@ pub struct SearchQuery {
     pub sort: Option<String>,
 }
 
-const EXPAND: &[&str] = &["gguf", "safetensors", "siblings", "tags", "pipeline_tag", "downloads", "likes", "lastModified", "config", "cardData", "gated"];
+const EXPAND: &[&str] =
+    &["gguf", "safetensors", "siblings", "tags", "pipeline_tag", "downloads", "likes", "lastModified", "config", "cardData", "gated"];
 
 fn kind_from(pipeline: Option<&str>, tags: &[String], name: &str) -> &'static str {
     let n = name.to_lowercase();
@@ -144,7 +145,8 @@ pub fn gguf_quants(files: &[FileRef]) -> (Vec<QuantOption>, Vec<FileRef>) {
 pub fn parse_model(v: &serde_json::Value, cfg: &Config) -> CatalogModel {
     let repo = v["id"].as_str().or(v["modelId"].as_str()).unwrap_or("").to_string();
     let (author, name) = repo.split_once('/').map(|(a, b)| (a.to_string(), b.to_string())).unwrap_or((String::new(), repo.clone()));
-    let tags: Vec<String> = v["tags"].as_array().map(|a| a.iter().filter_map(|t| t.as_str().map(String::from)).collect()).unwrap_or_default();
+    let tags: Vec<String> =
+        v["tags"].as_array().map(|a| a.iter().filter_map(|t| t.as_str().map(String::from)).collect()).unwrap_or_default();
     let siblings: Vec<FileRef> = v["siblings"]
         .as_array()
         .map(|a| {
@@ -236,7 +238,10 @@ pub fn parse_model(v: &serde_json::Value, cfg: &Config) -> CatalogModel {
         quants,
         mmproj,
         gated: v["gated"].as_bool().unwrap_or(false) || v["gated"].as_str().is_some(),
-        base_model: v["cardData"]["base_model"].as_str().map(String::from).or_else(|| v["cardData"]["base_model"][0].as_str().map(String::from)),
+        base_model: v["cardData"]["base_model"]
+            .as_str()
+            .map(String::from)
+            .or_else(|| v["cardData"]["base_model"][0].as_str().map(String::from)),
         tags,
         detailed: false,
     }
@@ -277,7 +282,15 @@ pub fn apply_tree(m: &mut CatalogModel, tree: &serde_json::Value) {
     }
     m.mmproj.sort_by_key(|f| {
         let n = f.path.to_lowercase();
-        if n.contains("f16") && !n.contains("bf16") { 0 } else if n.contains("bf16") { 1 } else if n.contains("q8") { 2 } else { 3 }
+        if n.contains("f16") && !n.contains("bf16") {
+            0
+        } else if n.contains("bf16") {
+            1
+        } else if n.contains("q8") {
+            2
+        } else {
+            3
+        }
     });
 }
 
@@ -310,7 +323,14 @@ pub fn annotate_fit(m: &mut CatalogModel, cfg: &Config, geometry: Option<&Geomet
             correction,
         });
         q.estimate_bytes = Some(e.total);
-        q.fit = if e.total <= headroom { "fits" } else if e.total <= cap { "needs_unload" } else { "too_big" }.into();
+        q.fit = if e.total <= headroom {
+            "fits"
+        } else if e.total <= cap {
+            "needs_unload"
+        } else {
+            "too_big"
+        }
+        .into();
     }
     let pref = &cfg.catalog.quant_preference;
     let best = pref
@@ -515,18 +535,30 @@ mod tests {
     #[test]
     fn mlx_embed_and_whisper_repos() {
         let cfg = Config::default();
-        let mlx = parse_model(&serde_json::json!({"id": "mlx-community/Qwen3-30B-A3B-4bit", "tags": ["mlx", "moe"], "safetensors": {"total": 30_500_000_000u64},
-            "siblings": [{"rfilename": "config.json"}, {"rfilename": "model-00001-of-00004.safetensors"}]}), &cfg);
+        let mlx = parse_model(
+            &serde_json::json!({"id": "mlx-community/Qwen3-30B-A3B-4bit", "tags": ["mlx", "moe"], "safetensors": {"total": 30_500_000_000u64},
+            "siblings": [{"rfilename": "config.json"}, {"rfilename": "model-00001-of-00004.safetensors"}]}),
+            &cfg,
+        );
         assert_eq!(mlx.format, "mlx");
         assert_eq!(mlx.class, "large");
         assert!(mlx.moe);
         assert_eq!(mlx.quants[0].quant, "4bit");
-        let emb = parse_model(&serde_json::json!({"id": "ggml-org/bge-m3-Q8_0-GGUF", "pipeline_tag": "sentence-similarity", "tags": ["gguf"],
-            "siblings": [{"rfilename": "bge-m3-q8_0.gguf"}]}), &cfg);
+        let emb = parse_model(
+            &serde_json::json!({"id": "ggml-org/bge-m3-Q8_0-GGUF", "pipeline_tag": "sentence-similarity", "tags": ["gguf"],
+            "siblings": [{"rfilename": "bge-m3-q8_0.gguf"}]}),
+            &cfg,
+        );
         assert_eq!((emb.kind.as_str(), emb.class.as_str()), ("embed", "embed"));
-        let rr = parse_model(&serde_json::json!({"id": "gpustack/bge-reranker-v2-m3-GGUF", "tags": ["gguf"], "siblings": [{"rfilename": "bge-reranker-v2-m3-Q4_K_M.gguf"}]}), &cfg);
+        let rr = parse_model(
+            &serde_json::json!({"id": "gpustack/bge-reranker-v2-m3-GGUF", "tags": ["gguf"], "siblings": [{"rfilename": "bge-reranker-v2-m3-Q4_K_M.gguf"}]}),
+            &cfg,
+        );
         assert_eq!(rr.kind, "rerank");
-        let w = parse_model(&serde_json::json!({"id": "ggerganov/whisper.cpp", "pipeline_tag": "automatic-speech-recognition", "siblings": [{"rfilename": "ggml-large-v3-turbo.bin"}]}), &cfg);
+        let w = parse_model(
+            &serde_json::json!({"id": "ggerganov/whisper.cpp", "pipeline_tag": "automatic-speech-recognition", "siblings": [{"rfilename": "ggml-large-v3-turbo.bin"}]}),
+            &cfg,
+        );
         assert_eq!((w.kind.as_str(), w.format.as_str()), ("stt", "whisper"));
     }
 

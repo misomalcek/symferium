@@ -18,7 +18,9 @@ pub enum Value {
     /// Small numeric/bool arrays are kept.
     Arr(Vec<Value>),
     /// Large or string arrays: only the length (strings longer than 256 KB are dropped too).
-    Skipped { len: u64 },
+    Skipped {
+        len: u64,
+    },
 }
 
 impl Value {
@@ -82,8 +84,7 @@ impl GgufInfo {
     }
     /// True for vision/audio projector files (mmproj).
     pub fn is_projector(&self) -> bool {
-        matches!(self.str("general.type"), Some("mmproj") | Some("projector"))
-            || matches!(self.arch(), "clip" | "mmproj")
+        matches!(self.str("general.type"), Some("mmproj") | Some("projector")) || matches!(self.arch(), "clip" | "mmproj")
     }
 }
 

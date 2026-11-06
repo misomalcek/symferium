@@ -30,7 +30,8 @@ pub fn serve(rt: Arc<Runtime>, inst: Arc<Instance>, listener: tokio::net::TcpLis
     });
 }
 
-const HOP: &[&str] = &["host", "connection", "keep-alive", "proxy-connection", "transfer-encoding", "te", "trailer", "upgrade", "content-length"];
+const HOP: &[&str] =
+    &["host", "connection", "keep-alive", "proxy-connection", "transfer-encoding", "te", "trailer", "upgrade", "content-length"];
 
 fn err(status: StatusCode, msg: impl Into<String>) -> Response {
     (status, Json(json!({"error": {"message": msg.into(), "type": "symferium"}}))).into_response()
@@ -42,7 +43,11 @@ async fn handle(State(s): State<PState>, req: Request) -> Response {
     if path == "/health" {
         let st = inst.state();
         let code = if st == "ready" { StatusCode::OK } else { StatusCode::SERVICE_UNAVAILABLE };
-        return (code, Json(json!({"status": if st == "ready" { "ok" } else { st.as_str() }, "model": inst.id, "engine": inst.spec.engine}))).into_response();
+        return (
+            code,
+            Json(json!({"status": if st == "ready" { "ok" } else { st.as_str() }, "model": inst.id, "engine": inst.spec.engine})),
+        )
+            .into_response();
     }
     if req.method() == Method::GET && (path == "/v1/models" || path == "/models") {
         return Json(json!({"object": "list", "data": [{
@@ -96,7 +101,13 @@ async fn forward(s: &PState, req: Request, path: &str, cfg: &crate::config::Conf
     let url = format!("http://127.0.0.1:{}{}", inst.internal_port, pq);
     let run_id = parts.headers.get("x-symferium-run").and_then(|v| v.to_str().ok()).map(String::from);
     let is_json = parts.headers.get("content-type").and_then(|v| v.to_str().ok()).is_some_and(|v| v.starts_with("application/json"));
-    let ctx = RequestCtx { instance: inst.id.clone(), model: inst.model.id.clone(), path: path.to_string(), run_id: run_id.clone(), ctx: inst.ctx };
+    let ctx = RequestCtx {
+        instance: inst.id.clone(),
+        model: inst.model.id.clone(),
+        path: path.to_string(),
+        run_id: run_id.clone(),
+        ctx: inst.ctx,
+    };
     let mut headers = reqwest::header::HeaderMap::new();
     for (k, v) in parts.headers.iter() {
         if !HOP.contains(&k.as_str()) {
@@ -149,7 +160,15 @@ async fn forward(s: &PState, req: Request, path: &str, cfg: &crate::config::Conf
     let mut stream = upstream.bytes_stream();
     // Recorded when the body is dropped: hyper stops polling once Content-Length is satisfied, so
     // the end of the stream is not a reliable place to finish.
-    let mut fin = Finisher { rt: s.rt.clone(), inst: inst.clone(), ctx: Some(ctx), tally: Some(Tally::new(is_sse || streaming_req)), started, status: status.as_u16(), measure };
+    let mut fin = Finisher {
+        rt: s.rt.clone(),
+        inst: inst.clone(),
+        ctx: Some(ctx),
+        tally: Some(Tally::new(is_sse || streaming_req)),
+        started,
+        status: status.as_u16(),
+        measure,
+    };
     let out = async_stream::stream! {
         while let Some(chunk) = stream.next().await {
             match chunk {
@@ -240,7 +259,17 @@ struct Tally {
 
 impl Tally {
     fn new(sse: bool) -> Self {
-        Self { sse, buf: Vec::new(), first_token: None, last_token: None, chunks: 0, prompt_tokens: 0, completion_tokens: 0, engine_decode_tps: 0.0, engine_prefill_tps: 0.0 }
+        Self {
+            sse,
+            buf: Vec::new(),
+            first_token: None,
+            last_token: None,
+            chunks: 0,
+            prompt_tokens: 0,
+            completion_tokens: 0,
+            engine_decode_tps: 0.0,
+            engine_prefill_tps: 0.0,
+        }
     }
 
     fn feed(&mut self, b: &[u8]) {

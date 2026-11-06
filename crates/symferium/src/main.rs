@@ -83,7 +83,9 @@ fn install_sidecars(cfg: &config::Config) -> Result<()> {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    tracing_subscriber::fmt().with_env_filter(tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into())).init();
+    tracing_subscriber::fmt()
+        .with_env_filter(tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()))
+        .init();
     let cli = Cli::parse();
     match &cli.cmd {
         Cmd::Serve { no_restore } => {
@@ -96,7 +98,8 @@ async fn main() -> Result<()> {
             if !no_restore {
                 rt.spawn_restore();
             }
-            let listener = tokio::net::TcpListener::bind((addr.0.as_str(), addr.1)).await.with_context(|| format!("binding {}:{}", addr.0, addr.1))?;
+            let listener =
+                tokio::net::TcpListener::bind((addr.0.as_str(), addr.1)).await.with_context(|| format!("binding {}:{}", addr.0, addr.1))?;
             tracing::info!("Symferium on http://{}:{} (config {})", addr.0, addr.1, path.display());
             let app = symferium::api::router(rt.clone());
             let rt2 = rt.clone();
@@ -146,7 +149,9 @@ async fn main() -> Result<()> {
             let p = rt.plan(&req)?;
             println!(
                 "{}",
-                serde_json::to_string_pretty(&serde_json::json!({"engine": p.engine, "class": p.class, "ctx": p.ctx, "allowed": p.decision.allowed, "reasons": p.decision.reasons, "estimate": p.estimate, "budget": p.decision.budget}))?
+                serde_json::to_string_pretty(
+                    &serde_json::json!({"engine": p.engine, "class": p.class, "ctx": p.ctx, "allowed": p.decision.allowed, "reasons": p.decision.reasons, "estimate": p.estimate, "budget": p.decision.budget})
+                )?
             );
         }
         Cmd::Launchd { action } => {
@@ -165,9 +170,14 @@ async fn main() -> Result<()> {
             let (_, cfg, _) = setup(&cli)?;
             let base = format!("http://{}:{}", cfg.server.host, cfg.server.control_port);
             let http = reqwest::Client::new();
-            let auth = |rb: reqwest::RequestBuilder| if cfg.server.admin_token.is_empty() { rb } else { rb.bearer_auth(&cfg.server.admin_token) };
+            let auth =
+                |rb: reqwest::RequestBuilder| if cfg.server.admin_token.is_empty() { rb } else { rb.bearer_auth(&cfg.server.admin_token) };
             let before: Vec<serde_json::Value> = auth(http.get(format!("{base}/api/bench"))).send().await?.json().await?;
-            auth(http.post(format!("{base}/api/bench/compare"))).json(&serde_json::json!({"models": models, "ctx": ctx})).send().await?.error_for_status()?;
+            auth(http.post(format!("{base}/api/bench/compare")))
+                .json(&serde_json::json!({"models": models, "ctx": ctx}))
+                .send()
+                .await?
+                .error_for_status()?;
             eprintln!("benchmarking {} model(s) one at a time…", models.len());
             let mut seen_failures = 0;
             loop {

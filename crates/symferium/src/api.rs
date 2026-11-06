@@ -70,6 +70,8 @@ pub fn router(rt: Rt) -> Router {
         .route("/api/events/history", get(events_history))
         .route("/api/tools", get(tools_manifest))
         .route("/api/tools/{name}", post(tools_call))
+        .route("/api/presets", get(presets_list))
+        .route("/api/presets/{name}/load", post(preset_load))
         .route("/api/version", get(version))
         .route("/api/shutdown", put(shutdown))
         .layer(middleware::from_fn_with_state(rt.clone(), auth));
@@ -94,7 +96,9 @@ async fn auth(State(rt): State<Rt>, req: Request, next: Next) -> Response {
         .or_else(|| req.uri().query().and_then(|q| q.split('&').find_map(|kv| kv.strip_prefix("token=").map(String::from))));
     let admin_ok = cfg.server.admin_token.is_empty() || token.as_deref() == Some(cfg.server.admin_token.as_str());
     let is_tools = path.starts_with("/api/tools");
-    let agent_ok = is_tools && (cfg.server.agent_token.is_empty() && cfg.server.admin_token.is_empty() || token.as_deref() == Some(cfg.server.agent_token.as_str()) && !cfg.server.agent_token.is_empty());
+    let agent_ok = is_tools
+        && (cfg.server.agent_token.is_empty() && cfg.server.admin_token.is_empty()
+            || token.as_deref() == Some(cfg.server.agent_token.as_str()) && !cfg.server.agent_token.is_empty());
     if admin_ok || agent_ok {
         next.run(req).await
     } else {
@@ -196,7 +200,8 @@ async fn put_settings(State(rt): State<Rt>, Json(p): Json<SettingsPut>) -> ApiRe
         cfg = config::apply_change(&cfg, &k, v, Actor::User)?;
         changed.push(k);
     }
-    let restart: Vec<String> = config::schema(&cfg).into_iter().filter(|s| s.restart_required && changed.contains(&s.key)).map(|s| s.key).collect();
+    let restart: Vec<String> =
+        config::schema(&cfg).into_iter().filter(|s| s.restart_required && changed.contains(&s.key)).map(|s| s.key).collect();
     rt.set_config(cfg)?;
     Ok(Json(json!({"ok": true, "changed": changed, "restart_required": restart})))
 }
@@ -323,6 +328,14 @@ async fn tools_call(State(rt): State<Rt>, Path(name): Path<String>, body: Option
             Err(ApiError(code, json!({"ok": false, "error": detail})))
         }
     }
+}
+
+async fn presets_list(State(rt): State<Rt>) -> Json<Value> {
+    Json(json!(crate::presets::all(&rt)))
+}
+
+async fn preset_load(State(rt): State<Rt>, Path(name): Path<String>) -> ApiResult {
+    Ok(Json(json!(crate::presets::load(&rt, &name).await?)))
 }
 
 async fn shutdown(State(rt): State<Rt>) -> Json<Value> {

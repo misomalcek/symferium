@@ -31,7 +31,8 @@ pub struct Geometry {
     pub experts_used: u32,
 }
 
-const ENCODER_ARCHS: &[&str] = &["bert", "nomic-bert", "nomic-bert-moe", "jina-bert-v2", "jina-bert-v3", "t5encoder", "modern-bert", "neo-bert", "xlm-roberta"];
+const ENCODER_ARCHS: &[&str] =
+    &["bert", "nomic-bert", "nomic-bert-moe", "jina-bert-v2", "jina-bert-v3", "t5encoder", "modern-bert", "neo-bert", "xlm-roberta"];
 
 /// Default local:global pattern for archs whose GGUF has a window but no explicit pattern.
 fn default_swa_period(arch: &str) -> Option<u32> {
@@ -98,10 +99,7 @@ impl Geometry {
                 swa: swa_flags[i],
             })
             .collect();
-        let vocab = g
-            .arch_u64("vocab_size")
-            .or_else(|| g.get("tokenizer.ggml.tokens").and_then(Value::len))
-            .unwrap_or(0) as u32;
+        let vocab = g.arch_u64("vocab_size").or_else(|| g.get("tokenizer.ggml.tokens").and_then(Value::len)).unwrap_or(0) as u32;
         Some(Self {
             encoder_only: ENCODER_ARCHS.contains(&arch.as_str()),
             ctx_train: g.arch_u64("context_length").unwrap_or(0),
@@ -129,9 +127,10 @@ impl Geometry {
         let global_head_dim = u("global_head_dim").map(|v| v as u32).unwrap_or(head_dim);
         let global_kv_heads = u("num_global_key_value_heads").map(|v| v as u32).unwrap_or(kv_heads);
         let window = u("sliding_window").unwrap_or(0) as u32;
-        let types: Option<Vec<bool>> = c.get("layer_types").and_then(|v| v.as_array()).map(|a| {
-            a.iter().map(|t| t.as_str().is_some_and(|s| s.contains("sliding"))).collect()
-        });
+        let types: Option<Vec<bool>> = c
+            .get("layer_types")
+            .and_then(|v| v.as_array())
+            .map(|a| a.iter().map(|t| t.as_str().is_some_and(|s| s.contains("sliding"))).collect());
         let model_type = c.get("model_type").and_then(|v| v.as_str()).unwrap_or("").to_string();
         let swa_flags = match (window, types) {
             (0, _) => vec![false; n],
@@ -306,8 +305,7 @@ pub fn estimate(i: &EstimateInput) -> Estimate {
             }
         }
     }
-    e.overhead = (i.overhead_mb * MIB) as u64
-        + if i.adapter == "mlx" || i.adapter == "tts" { (250.0 * MIB) as u64 } else { 0 };
+    e.overhead = (i.overhead_mb * MIB) as u64 + if i.adapter == "mlx" || i.adapter == "tts" { (250.0 * MIB) as u64 } else { 0 };
     e.correction = if i.correction > 0.0 { i.correction } else { 1.0 };
     let raw = e.weights + e.projector + e.kv + e.swa_checkpoints + e.prompt_cache + e.compute + e.overhead;
     e.total = (raw as f64 * e.correction) as u64;
@@ -379,7 +377,17 @@ mod tests {
     #[test]
     fn quantised_kv_is_smaller_and_encoders_have_none() {
         let g = Geometry::from_gguf(&gemma4_12b()).unwrap();
-        let base = EstimateInput { adapter: "llamacpp".into(), kind: "chat".into(), geometry: Some(g.clone()), ctx: 131072, parallel: 1, ubatch: 512, cache_type_k: "f16".into(), cache_type_v: "f16".into(), ..Default::default() };
+        let base = EstimateInput {
+            adapter: "llamacpp".into(),
+            kind: "chat".into(),
+            geometry: Some(g.clone()),
+            ctx: 131072,
+            parallel: 1,
+            ubatch: 512,
+            cache_type_k: "f16".into(),
+            cache_type_v: "f16".into(),
+            ..Default::default()
+        };
         let f16 = estimate(&base);
         let q8 = estimate(&EstimateInput { cache_type_k: "q8_0".into(), cache_type_v: "q8_0".into(), ..base.clone() });
         assert!(q8.kv < f16.kv * 6 / 10);
@@ -402,7 +410,13 @@ mod tests {
 
     #[test]
     fn correction_scales_total() {
-        let i = EstimateInput { adapter: "llamacpp".into(), kind: "chat".into(), weights_bytes: 1 << 30, correction: 1.5, ..Default::default() };
+        let i = EstimateInput {
+            adapter: "llamacpp".into(),
+            kind: "chat".into(),
+            weights_bytes: 1 << 30,
+            correction: 1.5,
+            ..Default::default()
+        };
         let e = estimate(&i);
         let raw = e.weights + e.kv + e.compute + e.overhead;
         assert_eq!(e.total, (raw as f64 * 1.5) as u64);

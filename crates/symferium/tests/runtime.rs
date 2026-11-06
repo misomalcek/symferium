@@ -15,7 +15,13 @@ use symferium::Runtime;
 const MOCK: &str = env!("CARGO_BIN_EXE_mock-engine");
 
 fn big_machine() -> MachineInfo {
-    MachineInfo { total_bytes: (64.0 * GB) as u64, available_bytes: (50.0 * GB) as u64, pressure: "normal".into(), perf_cores: 4, ..Default::default() }
+    MachineInfo {
+        total_bytes: (64.0 * GB) as u64,
+        available_bytes: (50.0 * GB) as u64,
+        pressure: "normal".into(),
+        perf_cores: 4,
+        ..Default::default()
+    }
 }
 
 fn write_models(dir: &Path) {
@@ -236,10 +242,12 @@ async fn agent_uses_tools_only() {
     assert_eq!(rt.cfg().classes["small"].ctx, 8192);
 
     let list: Value = call("list_models", json!({})).await.json().await.unwrap();
-    let id = list["result"]["local"].as_array().unwrap().iter().find(|m| m["format"] == "gguf").unwrap()["id"].as_str().unwrap().to_string();
+    let id =
+        list["result"]["local"].as_array().unwrap().iter().find(|m| m["format"] == "gguf").unwrap()["id"].as_str().unwrap().to_string();
     let est: Value = call("estimate", json!({"model": id})).await.json().await.unwrap();
     assert_eq!(est["result"]["allowed"], true);
-    let loaded: Value = call("load", json!({"model": id, "alias": "agent-tiny", "wait": true, "persist": false})).await.json().await.unwrap();
+    let loaded: Value =
+        call("load", json!({"model": id, "alias": "agent-tiny", "wait": true, "persist": false})).await.json().await.unwrap();
     let port = loaded["result"]["port"].as_u64().unwrap();
     let r = http.post(format!("http://127.0.0.1:{port}/v1/chat/completions")).json(&json!({"messages": []})).send().await.unwrap();
     assert!(r.status().is_success());

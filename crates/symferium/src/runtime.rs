@@ -198,7 +198,11 @@ impl Runtime {
             state,
             instances: Mutex::new(BTreeMap::new()),
             middleware: RwLock::new(Chain::new()),
-            http: reqwest::Client::builder().connect_timeout(Duration::from_secs(5)).pool_idle_timeout(Duration::from_secs(30)).build().expect("http client"),
+            http: reqwest::Client::builder()
+                .connect_timeout(Duration::from_secs(5))
+                .pool_idle_timeout(Duration::from_secs(30))
+                .build()
+                .expect("http client"),
             downloads: Default::default(),
             catalog_cache: Default::default(),
             load_lock: tokio::sync::Mutex::new(()),
@@ -344,13 +348,18 @@ impl Runtime {
             return Err(anyhow!("{alias} is already loaded (unload it first or pass another alias)").into());
         }
         if !plan.decision.allowed {
-            self.events.emit("governor.refused", serde_json::json!({"model": req.model, "reasons": plan.decision.reasons, "estimate": plan.estimate}));
+            self.events.emit(
+                "governor.refused",
+                serde_json::json!({"model": req.model, "reasons": plan.decision.reasons, "estimate": plan.estimate}),
+            );
             return Err(LoadError::Refused(Box::new(plan.decision)));
         }
         let port = self.pick_port(&cfg, req.port, false)?;
         let internal_port = self.pick_port(&cfg, None, true)?;
-        let spec = engines::build(&cfg, &plan.engine, &plan.entry, &plan.params, plan.mmproj.as_deref(), "127.0.0.1", internal_port, &alias)?;
-        let listener = tokio::net::TcpListener::bind((cfg.server.host.as_str(), port)).await.map_err(|e| anyhow!("binding port {port}: {e}"))?;
+        let spec =
+            engines::build(&cfg, &plan.engine, &plan.entry, &plan.params, plan.mmproj.as_deref(), "127.0.0.1", internal_port, &alias)?;
+        let listener =
+            tokio::net::TcpListener::bind((cfg.server.host.as_str(), port)).await.map_err(|e| anyhow!("binding port {port}: {e}"))?;
         let (ready_tx, _) = watch::channel(false);
         let inst = Arc::new(Instance {
             id: alias.clone(),
@@ -387,7 +396,10 @@ impl Runtime {
                 d.model_set.push(saved);
             });
         }
-        self.events.emit("model.loading", serde_json::json!({"id": alias, "port": port, "engine": plan.engine, "estimate_bytes": plan.estimate.total}));
+        self.events.emit(
+            "model.loading",
+            serde_json::json!({"id": alias, "port": port, "engine": plan.engine, "estimate_bytes": plan.estimate.total}),
+        );
         drop(_guard);
         if req.wait {
             let mut rx = inst.ready_tx.subscribe();
@@ -614,8 +626,12 @@ impl Runtime {
                     rt.events.emit("machine.pressure", serde_json::json!({"pressure": m.pressure, "available_bytes": m.available_bytes}));
                     last_pressure = m.pressure.clone();
                 }
-                if m.pressure == "critical" && cfg.governor.pressure_policy == "unload_lowest" && last_unload.elapsed() > Duration::from_secs(30) {
-                    let victim = rt.instances.lock().values().filter(|i| i.state() == "ready").min_by_key(|i| i.priority).map(|i| i.id.clone());
+                if m.pressure == "critical"
+                    && cfg.governor.pressure_policy == "unload_lowest"
+                    && last_unload.elapsed() > Duration::from_secs(30)
+                {
+                    let victim =
+                        rt.instances.lock().values().filter(|i| i.state() == "ready").min_by_key(|i| i.priority).map(|i| i.id.clone());
                     if let Some(id) = victim {
                         rt.events.emit("governor.unload_on_pressure", serde_json::json!({"id": id}));
                         let _ = rt.unload(&id, false).await;

@@ -238,11 +238,7 @@ impl Default for PathsConfig {
             models_dir: format!("{base}/models"),
             extra_model_dirs: vec!["~/.factorium/models".into()],
             state_dir: base.clone(),
-            logs_dir: if cfg!(target_os = "macos") {
-                "~/Library/Logs/Symferium".into()
-            } else {
-                format!("{base}/logs")
-            },
+            logs_dir: if cfg!(target_os = "macos") { "~/Library/Logs/Symferium".into() } else { format!("{base}/logs") },
             python_env: format!("{base}/pyenv"),
             sidecar_dir: format!("{base}/sidecars"),
         }
@@ -297,13 +293,7 @@ impl Default for CatalogConfig {
         Self {
             hf_endpoint: "https://huggingface.co".into(),
             hf_token: String::new(),
-            authors: vec![
-                "ggml-org".into(),
-                "unsloth".into(),
-                "bartowski".into(),
-                "mlx-community".into(),
-                "lmstudio-community".into(),
-            ],
+            authors: vec!["ggml-org".into(), "unsloth".into(), "bartowski".into(), "mlx-community".into(), "lmstudio-community".into()],
             search_limit: 40,
             cache_ttl_s: 3600,
             small_max_b: 5.0,
@@ -327,7 +317,8 @@ impl Default for DownloadConfig {
 impl Default for BenchConfig {
     fn default() -> Self {
         Self {
-            prompt: "Explain in five sentences how unified memory on Apple Silicon changes the way local language models are served.".into(),
+            prompt: "Explain in five sentences how unified memory on Apple Silicon changes the way local language models are served."
+                .into(),
             max_tokens: 256,
             runs: 3,
         }
@@ -396,10 +387,39 @@ fn s(v: &[&str]) -> Vec<String> {
 pub fn default_engines() -> BTreeMap<String, EngineProfile> {
     let mut m = BTreeMap::new();
     let llama_args = s(&[
-        "-m", "{model}", "--host", "{host}", "--port", "{port}", "-c", "{ctx}", "-ngl", "{gpu_layers}",
-        "-fa", "{flash_attn}", "-ctk", "{cache_type_k}", "-ctv", "{cache_type_v}", "-np", "{parallel}",
-        "-b", "{batch}", "-ub", "{ubatch}", "-t", "{threads}", "--ctx-checkpoints", "{ctx_checkpoints}",
-        "--cache-ram", "{cache_ram_mb}", "--jinja", "--metrics", "--no-webui", "-a", "{alias}",
+        "-m",
+        "{model}",
+        "--host",
+        "{host}",
+        "--port",
+        "{port}",
+        "-c",
+        "{ctx}",
+        "-ngl",
+        "{gpu_layers}",
+        "-fa",
+        "{flash_attn}",
+        "-ctk",
+        "{cache_type_k}",
+        "-ctv",
+        "{cache_type_v}",
+        "-np",
+        "{parallel}",
+        "-b",
+        "{batch}",
+        "-ub",
+        "{ubatch}",
+        "-t",
+        "{threads}",
+        "--ctx-checkpoints",
+        "{ctx_checkpoints}",
+        "--cache-ram",
+        "{cache_ram_mb}",
+        "--jinja",
+        "--metrics",
+        "--no-webui",
+        "-a",
+        "{alias}",
     ]);
     m.insert(
         "llamacpp".into(),
@@ -477,8 +497,16 @@ pub fn default_engines() -> BTreeMap<String, EngineProfile> {
             adapter: "whispercpp".into(),
             binary: "whisper-server".into(),
             args: s(&[
-                "-m", "{model}", "--host", "{host}", "--port", "{port}", "-t", "{threads}",
-                "--inference-path", "/v1/audio/transcriptions",
+                "-m",
+                "{model}",
+                "--host",
+                "{host}",
+                "--port",
+                "{port}",
+                "-t",
+                "{threads}",
+                "--inference-path",
+                "/v1/audio/transcriptions",
             ]),
             health_path: "/".into(),
             kinds: s(&["stt"]),
@@ -506,10 +534,7 @@ pub fn default_classes(threads: u32) -> BTreeMap<String, ClassDefaults> {
     let mut m = BTreeMap::new();
     m.insert("standard".into(), ClassDefaults { priority: 60, ..base.clone() });
     m.insert("large".into(), ClassDefaults { ctx: 16384, priority: 40, ..base.clone() });
-    m.insert(
-        "small".into(),
-        ClassDefaults { cache_type_k: "f16".into(), cache_type_v: "f16".into(), priority: 50, ..base.clone() },
-    );
+    m.insert("small".into(), ClassDefaults { cache_type_k: "f16".into(), cache_type_v: "f16".into(), priority: 50, ..base.clone() });
     let helper = ClassDefaults {
         ctx: 8192,
         cache_type_k: "f16".into(),
@@ -761,7 +786,10 @@ static META: &[Meta] = &[
     m("server.internal_port_end", "Last private port an engine binds behind the proxy.").range(1024.0, 65535.0),
     m("server.admin_token", "Bearer token required for the whole control API. Empty = no auth.").secret(),
     m("server.agent_token", "Bearer token that may call /api/tools only. Empty = no auth.").secret(),
-    m("server.proxy_wait_ready_s", "How long a request waits on a model port while its engine restarts.").unit("s").range(0.0, 3600.0).agent(),
+    m("server.proxy_wait_ready_s", "How long a request waits on a model port while its engine restarts.")
+        .unit("s")
+        .range(0.0, 3600.0)
+        .agent(),
     m("server.proxy_max_json_body", "Largest JSON body the proxy inspects.").unit("bytes").range(1024.0, 1e9),
     m("paths.models_dir", "Where downloads go. Scanned for models."),
     m("paths.extra_model_dirs", "Extra folders scanned for models, read-only."),
@@ -770,7 +798,9 @@ static META: &[Meta] = &[
     m("paths.python_env", "Python env (uv) holding mlx-lm, mlx-vlm and TTS packages."),
     m("paths.sidecar_dir", "Folder with Symferium's sidecar scripts."),
     m("governor.min_free_gb", "Keep at least this much memory free after any load.").unit("GB").range(1.0, 512.0),
-    m("governor.max_total_gb", "Upper bound for all loaded models. 0 = min(total − min free, Metal working set).").unit("GB").range(0.0, 512.0),
+    m("governor.max_total_gb", "Upper bound for all loaded models. 0 = min(total − min free, Metal working set).")
+        .unit("GB")
+        .range(0.0, 512.0),
     m("governor.engine_overhead_mb", "Fixed overhead added to every estimate.").unit("MB").range(0.0, 8192.0),
     m("governor.refuse_on_pressure", "Refuse loads at or above this macOS memory pressure.").choices(PRESSURE),
     m("governor.pressure_policy", "On critical pressure: only refuse new loads, or also unload the lowest-priority model.").choices(POLICY),
@@ -821,7 +851,9 @@ static META: &[Meta] = &[
     m("classes.*.threads", "CPU threads.").range(1.0, 64.0).agent(),
     m("classes.*.pooling", "Embedding pooling.").choices(POOL),
     m("classes.*.max_tokens", "Default max tokens for MLX servers.").range(1.0, 1_048_576.0).agent(),
-    m("classes.*.ctx_checkpoints", "llama.cpp context checkpoints for SWA/hybrid models; each costs one SWA state.").range(0.0, 64.0).agent(),
+    m("classes.*.ctx_checkpoints", "llama.cpp context checkpoints for SWA/hybrid models; each costs one SWA state.")
+        .range(0.0, 64.0)
+        .agent(),
     m("classes.*.cache_ram_mb", "llama.cpp host prompt cache.").unit("MB").range(0.0, 65536.0).agent(),
     m("classes.*.priority", "Lower = unloaded first under memory pressure.").range(0.0, 100.0).agent(),
     m("engines.*.adapter", "Adapter family.").choices(ADAPTERS),
@@ -957,12 +989,8 @@ pub enum Actor {
 pub fn apply_change(cfg: &Config, key: &str, value: serde_json::Value, actor: Actor) -> Result<Config> {
     let specs = schema(cfg);
     // Allow adding entries under engines.* / classes.* by matching the pattern of a sibling.
-    let spec = specs
-        .iter()
-        .find(|s| s.key == key)
-        .cloned()
-        .or_else(|| new_entry_spec(key))
-        .ok_or_else(|| anyhow!("unknown setting {key}"))?;
+    let spec =
+        specs.iter().find(|s| s.key == key).cloned().or_else(|| new_entry_spec(key)).ok_or_else(|| anyhow!("unknown setting {key}"))?;
     if actor == Actor::Agent && !spec.agent_writable {
         bail!("{key} is not agent_writable");
     }
@@ -987,9 +1015,7 @@ pub fn apply_change(cfg: &Config, key: &str, value: serde_json::Value, actor: Ac
         let t = cur.as_table_mut().ok_or_else(|| anyhow!("{key}: parent is not a table"))?;
         cur = t.entry(p.to_string()).or_insert_with(|| toml::Value::Table(Default::default()));
     }
-    cur.as_table_mut()
-        .ok_or_else(|| anyhow!("{key}: parent is not a table"))?
-        .insert(parts[parts.len() - 1].to_string(), new_val);
+    cur.as_table_mut().ok_or_else(|| anyhow!("{key}: parent is not a table"))?.insert(parts[parts.len() - 1].to_string(), new_val);
     let new_cfg: Config = root.try_into().map_err(|e| anyhow!("{key}: {e}"))?;
     new_cfg.validate()?;
     Ok(new_cfg)
@@ -1001,7 +1027,17 @@ fn new_entry_spec(key: &str) -> Option<SettingSpec> {
     let sample_key = key
         .split('.')
         .enumerate()
-        .map(|(i, p)| if i == 1 { if key.starts_with("engines.") { "llamacpp" } else { "standard" } } else { p })
+        .map(|(i, p)| {
+            if i == 1 {
+                if key.starts_with("engines.") {
+                    "llamacpp"
+                } else {
+                    "standard"
+                }
+            } else {
+                p
+            }
+        })
         .collect::<Vec<_>>()
         .join(".");
     let root = toml::Value::try_from(&probe).ok()?;
@@ -1028,7 +1064,9 @@ fn json_to_toml(v: &serde_json::Value, kind: &str) -> Result<toml::Value> {
         ("bool", J::Bool(b)) => toml::Value::Boolean(*b),
         ("bool", J::String(s)) => toml::Value::Boolean(s == "true"),
         ("int", J::Number(n)) => toml::Value::Integer(
-            n.as_i64().or_else(|| n.as_f64().filter(|f| f.fract() == 0.0).map(|f| f as i64)).ok_or_else(|| anyhow!("expected an integer"))?,
+            n.as_i64()
+                .or_else(|| n.as_f64().filter(|f| f.fract() == 0.0).map(|f| f as i64))
+                .ok_or_else(|| anyhow!("expected an integer"))?,
         ),
         ("int", J::String(s)) => toml::Value::Integer(s.trim().parse()?),
         ("float", J::Number(n)) => toml::Value::Float(n.as_f64().unwrap_or(0.0)),

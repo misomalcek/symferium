@@ -77,7 +77,8 @@ pub fn install(cfg: &Config, binary: &Path, config_path: &Path) -> Result<PathBu
 pub fn uninstall(cfg: &Config) -> Result<()> {
     let path = plist_path(cfg);
     if cfg!(target_os = "macos") {
-        let _ = std::process::Command::new("launchctl").args(["bootout", &format!("gui/{}/{}", uid(), cfg.autostart.launchd_label)]).status();
+        let _ =
+            std::process::Command::new("launchctl").args(["bootout", &format!("gui/{}/{}", uid(), cfg.autostart.launchd_label)]).status();
     }
     if path.exists() {
         std::fs::remove_file(path)?;

@@ -156,8 +156,20 @@ impl Library {
         self.entries.read().clone()
     }
 
+    /// By library id, by file path, or by folder (the model file inside it; `~` allowed).
     pub fn get(&self, id: &str) -> Option<ModelEntry> {
-        self.entries.read().iter().find(|e| e.id == id || e.path.to_string_lossy() == id).cloned()
+        let entries = self.entries.read();
+        if let Some(e) = entries.iter().find(|e| e.id == id || e.path.to_string_lossy() == id) {
+            return Some(e.clone());
+        }
+        let p = expand(id);
+        if p.is_file() || (p.is_dir() && p.join("config.json").exists()) {
+            return entries.iter().find(|e| e.path == p).cloned();
+        }
+        if p.is_dir() {
+            return entries.iter().find(|e| e.path.parent() == Some(p.as_path())).cloned();
+        }
+        None
     }
 
     fn gguf_info(&self, p: &Path) -> Option<gguf::GgufInfo> {
@@ -224,12 +236,7 @@ impl Library {
             let name = stem(&f);
             let size = if name.contains("-00001-of-") {
                 let prefix = name.split("-00001-of-").next().unwrap_or("").to_string();
-                walk_files(&dir, 0)
-                    .iter()
-                    .filter(|p| stem(p).starts_with(&prefix))
-                    .filter_map(|p| p.metadata().ok())
-                    .map(|m| m.len())
-                    .sum()
+                walk_files(&dir, 0).iter().filter(|p| stem(p).starts_with(&prefix)).filter_map(|p| p.metadata().ok()).map(|m| m.len()).sum()
             } else {
                 f.metadata().map(|m| m.len()).unwrap_or(0)
             };
@@ -262,7 +269,15 @@ impl Library {
                     let mut ps = ps.clone();
                     ps.sort_by_key(|(p, _)| {
                         let n = p.to_string_lossy().to_lowercase();
-                        if n.contains("f16") && !n.contains("bf16") { 0 } else if n.contains("bf16") { 1 } else if n.contains("q8") { 2 } else { 3 }
+                        if n.contains("f16") && !n.contains("bf16") {
+                            0
+                        } else if n.contains("bf16") {
+                            1
+                        } else if n.contains("q8") {
+                            2
+                        } else {
+                            3
+                        }
                     });
                     if let Some((p, s)) = ps.first() {
                         mmproj = Some(p.clone());
@@ -272,7 +287,8 @@ impl Library {
                     }
                 }
             }
-            let params = Some(info.parameter_count).filter(|p| *p > 0).or_else(|| info.get("general.parameter_count").and_then(|v| v.as_u64()));
+            let params =
+                Some(info.parameter_count).filter(|p| *p > 0).or_else(|| info.get("general.parameter_count").and_then(|v| v.as_u64()));
             let display = info.str("general.name").map(String::from).unwrap_or_else(|| name.clone());
             out.push(ModelEntry {
                 id: slug(&name),
@@ -431,12 +447,20 @@ pub mod tests {
         cfg.paths.extra_model_dirs = vec![];
         let g = tmp.path().join("gemma");
         std::fs::create_dir_all(&g).unwrap();
-        write_chat_gguf(&g.join("gemma-4-12b-it-Q5_K_M.gguf"), "gemma4", vec![12_000_000, 1000], "{% if tools %}{{ enable_thinking }}{% endif %}");
+        write_chat_gguf(
+            &g.join("gemma-4-12b-it-Q5_K_M.gguf"),
+            "gemma4",
+            vec![12_000_000, 1000],
+            "{% if tools %}{{ enable_thinking }}{% endif %}",
+        );
         let proj = build(&[("general.architecture", W::Str("clip")), ("general.type", W::Str("mmproj"))], &[]);
         to_file(&g.join("mmproj-F16.gguf"), &proj, 1000);
         let emb = tmp.path().join("embed");
         std::fs::create_dir_all(&emb).unwrap();
-        let eb = build(&[("general.architecture", W::Str("bert")), ("bert.block_count", W::U32(24)), ("bert.pooling_type", W::U32(2))], &[("w", vec![500_000_000])]);
+        let eb = build(
+            &[("general.architecture", W::Str("bert")), ("bert.block_count", W::U32(24)), ("bert.pooling_type", W::U32(2))],
+            &[("w", vec![500_000_000])],
+        );
         to_file(&emb.join("bge-m3-Q8_0.gguf"), &eb, 2000);
         let mlx = tmp.path().join("mlx-community/Qwen3-4B-4bit");
         std::fs::create_dir_all(&mlx).unwrap();

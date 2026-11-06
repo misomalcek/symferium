@@ -10,7 +10,13 @@ use futures::StreamExt;
 use std::sync::Arc;
 use std::time::Instant;
 
-pub async fn run(rt: &Arc<Runtime>, instance: &str, prompt: Option<String>, max_tokens: Option<u32>, runs: Option<u32>) -> Result<BenchResult> {
+pub async fn run(
+    rt: &Arc<Runtime>,
+    instance: &str,
+    prompt: Option<String>,
+    max_tokens: Option<u32>,
+    runs: Option<u32>,
+) -> Result<BenchResult> {
     let cfg = rt.cfg();
     let inst = rt.get(instance).ok_or_else(|| anyhow!("{instance} is not loaded"))?;
     if inst.model.kind != "chat" {
@@ -76,8 +82,20 @@ pub async fn run(rt: &Arc<Runtime>, instance: &str, prompt: Option<String>, max_
         let first = first.ok_or_else(|| anyhow!("no tokens came back"))?;
         let ttft = first.duration_since(started).as_secs_f64();
         let gen = last.unwrap_or(first).duration_since(first).as_secs_f64();
-        let dec = if eng_dec > 0.0 { eng_dec } else if gen > 0.0 { (ct.saturating_sub(1)) as f64 / gen } else { 0.0 };
-        let pre = if eng_pre > 0.0 { eng_pre } else if ttft > 0.0 && pt > 0 { pt as f64 / ttft } else { 0.0 };
+        let dec = if eng_dec > 0.0 {
+            eng_dec
+        } else if gen > 0.0 {
+            (ct.saturating_sub(1)) as f64 / gen
+        } else {
+            0.0
+        };
+        let pre = if eng_pre > 0.0 {
+            eng_pre
+        } else if ttft > 0.0 && pt > 0 {
+            pt as f64 / ttft
+        } else {
+            0.0
+        };
         ttft_sum += ttft;
         pre_sum += pre;
         dec_sum += dec;
@@ -101,7 +119,8 @@ pub fn compare(rt: &Arc<Runtime>, models: Vec<String>, ctx: Option<u32>) {
         let mut results = vec![];
         for m in models {
             let alias = format!("bench-{}", m.chars().filter(|c| c.is_ascii_alphanumeric() || *c == '-').collect::<String>());
-            let req = LoadRequest { model: m.clone(), alias: Some(alias.clone()), ctx, persist: Some(false), wait: true, ..Default::default() };
+            let req =
+                LoadRequest { model: m.clone(), alias: Some(alias.clone()), ctx, persist: Some(false), wait: true, ..Default::default() };
             match rt.load(req).await {
                 Ok(_) => {
                     match run(&rt, &alias, None, None, None).await {

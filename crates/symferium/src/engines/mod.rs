@@ -76,7 +76,11 @@ pub fn choose_engine(cfg: &Config, entry: &ModelEntry, req: &LoadRequest, class:
         return Ok(e.clone());
     }
     let preferred = if entry.format == "mlx" {
-        if entry.flags.vision { "mlx-vlm".to_string() } else { class.engine_mlx.clone() }
+        if entry.flags.vision {
+            "mlx-vlm".to_string()
+        } else {
+            class.engine_mlx.clone()
+        }
     } else {
         class.engine.clone()
     };
@@ -217,7 +221,9 @@ mod tests {
         cfg.engines.get_mut("llamacpp").unwrap().binary = "/bin/sh".into();
         let req = LoadRequest { ctx: Some(65536), ..Default::default() };
         let params = params_for(&cfg.class("standard"), &req);
-        let spec = build(&cfg, "llamacpp", &entry("chat", "gguf"), &params, Some(Path::new("/models/mmproj.gguf")), "127.0.0.1", 17701, "gemma").unwrap();
+        let spec =
+            build(&cfg, "llamacpp", &entry("chat", "gguf"), &params, Some(Path::new("/models/mmproj.gguf")), "127.0.0.1", 17701, "gemma")
+                .unwrap();
         let line = spec.command_line();
         assert!(line.contains("-c 65536"), "{line}");
         assert!(line.contains("--mmproj /models/mmproj.gguf"));

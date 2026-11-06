@@ -113,8 +113,10 @@ async fn embeddings(State(s): State<Arc<S>>, Json(body): Json<Value>) -> Json<Va
         Value::Array(a) => a.len(),
         _ => 1,
     };
-    Json(json!({"object": "list", "data": (0..inputs).map(|i| json!({"object": "embedding", "index": i, "embedding": [0.1, 0.2, 0.3]})).collect::<Vec<_>>(),
-        "usage": {"prompt_tokens": 3, "total_tokens": 3}}))
+    Json(
+        json!({"object": "list", "data": (0..inputs).map(|i| json!({"object": "embedding", "index": i, "embedding": [0.1, 0.2, 0.3]})).collect::<Vec<_>>(),
+        "usage": {"prompt_tokens": 3, "total_tokens": 3}}),
+    )
 }
 
 async fn rerank(Json(body): Json<Value>) -> Json<Value> {

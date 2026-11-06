@@ -16,6 +16,7 @@ pub mod gguf;
 pub mod governor;
 pub mod launchd;
 pub mod library;
+pub mod presets;
 pub mod probe;
 pub mod proxy;
 pub mod runtime;

@@ -1,0 +1,31 @@
+{
+  "description": "M5: Factorium's current inference set on spare Symferium ports, beside the running llama.cpp jobs (:8080/:8083/:8084). Same weights, same context, same projector.",
+  "models": [
+    {
+      "model": "~/.factorium/models/gemma-4-12b-it-Q5_K_M",
+      "alias": "gemma-4-12b-it",
+      "engine": "llamacpp",
+      "port": 7701,
+      "ctx": 131072,
+      "mmproj": "auto",
+      "params": { "parallel": "1", "flash_attn": "on", "cache_type_k": "f16", "cache_type_v": "f16", "class": "standard" },
+      "persist": false
+    },
+    {
+      "model": "~/.factorium/models/embed",
+      "alias": "bge-m3",
+      "engine": "llamacpp",
+      "port": 7702,
+      "params": { "class": "embed" },
+      "persist": false
+    },
+    {
+      "model": "~/.factorium/models/rerank",
+      "alias": "bge-reranker-v2-m3",
+      "engine": "llamacpp",
+      "port": 7703,
+      "params": { "class": "rerank" },
+      "persist": false
+    }
+  ]
+}

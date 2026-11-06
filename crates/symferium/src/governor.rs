@@ -67,13 +67,24 @@ fn pressure_rank(p: &str) -> u8 {
 }
 
 /// `loaded_classes`: classes of chat models currently loaded (for the exclusive-large rule).
-pub fn check(cfg: &Config, m: &MachineInfo, est: Estimate, committed: u64, pending: u64, loaded_classes: &[String], new_class: &str) -> Decision {
+pub fn check(
+    cfg: &Config,
+    m: &MachineInfo,
+    est: Estimate,
+    committed: u64,
+    pending: u64,
+    loaded_classes: &[String],
+    new_class: &str,
+) -> Decision {
     let b = budget(cfg, m, committed, pending);
     let mut reasons = Vec::new();
     if committed + est.total > b.cap_bytes {
         reasons.push(format!(
             "would exceed the Symferium ceiling: loaded {} + this model {} = {} > ceiling {}",
-            gb(committed), gb(est.total), gb(committed + est.total), gb(b.cap_bytes)
+            gb(committed),
+            gb(est.total),
+            gb(committed + est.total),
+            gb(b.cap_bytes)
         ));
     }
     let free_after = m.available_bytes as i64 - pending as i64 - est.total as i64;
@@ -81,7 +92,10 @@ pub fn check(cfg: &Config, m: &MachineInfo, est: Estimate, committed: u64, pendi
         reasons.push(format!(
             "would leave {} free (available {} − starting {} − this model {}), below the minimum {}",
             if free_after < 0 { format!("-{}", gb(free_after.unsigned_abs())) } else { gb(free_after as u64) },
-            gb(m.available_bytes), gb(pending), gb(est.total), gb(b.min_free_bytes)
+            gb(m.available_bytes),
+            gb(pending),
+            gb(est.total),
+            gb(b.min_free_bytes)
         ));
     }
     let limit = match cfg.governor.refuse_on_pressure.as_str() {

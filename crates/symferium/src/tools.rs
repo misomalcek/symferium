@@ -46,6 +46,8 @@ pub fn manifest() -> Value {
              "parameters": {"type": "object", "properties": {"agent_writable_only": {"type": "boolean"}}}},
             {"name": "set_setting", "description": "Change one agent_writable setting.",
              "parameters": {"type": "object", "required": ["key", "value"], "properties": {"key": {"type": "string"}, "value": {}}}},
+            {"name": "load_preset", "description": "Load a named model set (GET /api/presets lists them), one model at a time.",
+             "parameters": {"type": "object", "required": ["name"], "properties": {"name": {"type": "string"}}}},
             {"name": "bench", "description": "Measure prefill and decode tok/s of a loaded chat model.",
              "parameters": {"type": "object", "required": ["id"], "properties": {"id": {"type": "string"}, "max_tokens": {"type": "integer"}, "runs": {"type": "integer"}}}}
         ],
@@ -77,7 +79,11 @@ pub async fn call(rt: &Arc<Runtime>, name: &str, args: Value) -> Result<Value> {
             "id": e.id, "name": e.name, "kind": e.kind, "class": e.class, "format": e.format, "quant": e.quant,
             "size_bytes": e.size_bytes, "flags": e.flags, "ctx_train": e.ctx_train, "vision_projector": e.mmproj.is_some()})).collect::<Vec<_>>()}),
         "machine" => json!({"machine": rt.probe.snapshot(), "budget": rt.budget()}),
-        "metrics" => json!(rt.list().into_iter().map(|i| json!({"id": i.id, "state": i.status.state, "port": i.port, "metrics": i.metrics})).collect::<Vec<_>>()),
+        "metrics" => json!(rt
+            .list()
+            .into_iter()
+            .map(|i| json!({"id": i.id, "state": i.status.state, "port": i.port, "metrics": i.metrics}))
+            .collect::<Vec<_>>()),
         "estimate" => {
             let req: LoadRequest = serde_json::from_value(args)?;
             let p = rt.plan(&req)?;
@@ -126,11 +132,15 @@ pub async fn call(rt: &Arc<Runtime>, name: &str, args: Value) -> Result<Value> {
             if args["agent_writable_only"].as_bool().unwrap_or(false) {
                 specs.retain(|s| s.agent_writable);
             }
-            let specs: Vec<Value> = specs.into_iter().filter(|s| !s.secret).map(|s| {
-                let mut v = serde_json::to_value(&s).unwrap_or_default();
-                v["value"] = config::get_value(&cfg, &s.key).unwrap_or(Value::Null);
-                v
-            }).collect();
+            let specs: Vec<Value> = specs
+                .into_iter()
+                .filter(|s| !s.secret)
+                .map(|s| {
+                    let mut v = serde_json::to_value(&s).unwrap_or_default();
+                    v["value"] = config::get_value(&cfg, &s.key).unwrap_or(Value::Null);
+                    v
+                })
+                .collect();
             json!(specs)
         }
         "set_setting" => {
@@ -139,9 +149,16 @@ pub async fn call(rt: &Arc<Runtime>, name: &str, args: Value) -> Result<Value> {
             rt.set_config(new)?;
             json!({"ok": true, "key": key, "value": config::get_value(&rt.cfg(), key)?})
         }
+        "load_preset" => {
+            let name = args["name"].as_str().ok_or_else(|| anyhow!("name is required"))?;
+            json!(crate::presets::load(rt, name).await?)
+        }
         "bench" => {
             let id = args["id"].as_str().ok_or_else(|| anyhow!("id is required"))?;
-            json!(crate::bench::run(rt, id, None, args["max_tokens"].as_u64().map(|v| v as u32), args["runs"].as_u64().map(|v| v as u32)).await?)
+            json!(
+                crate::bench::run(rt, id, None, args["max_tokens"].as_u64().map(|v| v as u32), args["runs"].as_u64().map(|v| v as u32))
+                    .await?
+            )
         }
         other => return Err(anyhow!("unknown tool {other}")),
     })
