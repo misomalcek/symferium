@@ -1,0 +1,32 @@
+- https://github.com/Michael-A-Kuykendall/shimmy Pure-Rust WebGPU inference engine — OpenAI-API compatible, GGUF native, runs on any GPU. No Python. No llama.cpp. Single binary.
+- https://huggingface.co/harshatheg/Qwen-2.5-1B-RLCD A high-throughput inference engine for structured information extraction, decision routing, and categorical classification on Apple Silicon using MLX.
+- https://github.com/PaddlePaddle/Anakin High performance Cross-platform Inference-engine, you could run Anakin on x86-cpu,arm, nv-gpu, amd-gpu,bitmain and cambricon devices.
+- https://github.com/brontoguana/krasis Krasis is a Hybrid LLM runtime which focuses on efficient running of larger models on consumer grade VRAM limited hardware
+- https://github.com/ARahim3/mlx-dspark Up to 4× faster LLM decoding on Apple Silicon, lossless. Native MLX port of DeepSeek's DSpark & z-lab's DFlash speculative decoding — Gemma-4, Qwen3.8, Muse-Glimmer, Nemotron, LFM2.5, Ornith-1.0, ternary Bonsai-27B.
+- https://github.com/JustVugg/colibri A hierarchical inference engine for frontier MoE models: hot experts on the GPU (CUDA, Vulkan), warm ones in RAM, cold ones streamed from NVMe. Written in C, runs on the hardware you already own.
+- https://github.com/mseri/zunzuncito Gemma-4 26B-A4B colibrì engine for a small-RAM **machine**
+- https://github.com/qualcomm/GenieX Run frontier LLMs and VLMs locally on Qualcomm devices across NPU, GPU, and CPU with a few lines of code
+- https://github.com/drumih/turbo-fieldfare Gemma 4 26B-A4B inference in ~2 GB of RAM on any M-series MacBook
+- https://github.com/DimitrisLianos/LLM_Wiki_SecondBrain Fully local LLM Wiki : Karpathy's knowledge base pattern with Gemma 4, Unsloth Dynamic, and TurboQuant KV cache.
+- https://github.com/Cyclenerd/android-llm-server Local LLM Server for Android (Google Gemma 4, LiteRT, OpenAI API)
+- https://github.com/hung-yueh/react-native-litert-lm High-performance on-device LLM inference for React Native, powered by LiteRT-LM and Nitro Modules
+- https://github.com/AtomicBot-ai/atomic-llama-cpp-turboquant llama.cpp fork with TurboQuant WHT-rotated KV cache & weight compression + Gemma 4 MTP and Qwen 3.6 NextN speculative decoding (+30-50% throughput).
+- https://github.com/timmyy123/LLM-Hub Local LLM, image&video&music generator, Chat with local models, run Claude Code and OpenClaw on them, turn prompts into slides and pages, generate images, video and music, and serve OpenAI and Anthropic compatible APIs to your other apps. (https://www.llm-hub.app/)
+- https://github.com/zhongkaifu/TensorSharp A native .NET LLM inference engine and agent runtime for GGUF models.
+- https://github.com/google-ai-edge/LiteRT-LM LiteRT-LM is Google's production-ready, high-performance, open-source inference framework for deploying Large Language Models on edge devices.
+- https://github.com/off-grid-ai/OGAM The Swiss Army Knife of Offline AI. Chat, see, speak, and generate images on your phone or Mac — GGUF LLMs, vision, Whisper speech-to-text, Stable Diffusion, tool calling, and local-network servers.
+- https://github.com/microsoft/foundry-local Foundry Local is an **end-to-end local AI solution** for building applications that run entirely on the user's device. It provides native SDKs (C, C++, C#, JavaScript, Python, and Rust), a curated catalog of optimized models, and automatic hardware acceleration — all in a lightweight package (~20 MB).
+- https://github.com/yanun0323/Whallm DeepSeek-V4-Flash-0731 284B inference in ~25 GB of RAM / Qwen3.8-Next-Flash inference in ~15 GB of RAM on any M-series MacBook
+- https://github.com/FareedKhan-dev/kimi-k3-in-c A 2.78-trillion-parameter Kimi K3 running inference on a single CPU in 8.24 GB of RAM. Portable C99: no BLAS, no framework, no GPU.
+- https://github.com/raullenchai/Rapid-MLX Rapid-MLX is an open-source (Apache 2.0) OpenAI- and Anthropic-compatible LLM inference server for Apple Silicon, built on MLX, focused on reliable tool calling for coding agents. Up to 4× faster than Apple's MLX (mlx-lm) on the same weights.
+- https://github.com/trymirai/uzu A high-performance inference engine for AI models
+- https://github.com/TheTom/turboquant_plus Implementation of [TurboQuant](https://research.google/blog/turboquant-redefining-ai-efficiency-with-extreme-compression/) (ICLR 2026) with implementation work, experiments, and follow-on findings beyond the base paper. Compresses transformer KV cache **3.8-6.4x** using PolarQuant + Walsh-Hadamard rotation, at near q8_0 prefill speed and ~0.9x decode throughput at long context. Validated end-to-end from 1.5B to **104B at 128K context on a MacBook** (turbo3, PPL 4.024, 74 GB peak memory).
+- https://github.com/mutkach/gemma-rs Llama and Gemma inference engine based on Rust and Metal
+- https://github.com/miuda-ai/lele Bare-Metal Rust Audio AI Framework
+- https://github.com/lucasjinreal/Crane A Pure Rust based LLM, VLM, VLA, TTS, OCR Inference Engine, powering by Candle & Rust. Alternate to your llama.cpp but much more simpler and cleaner..
+- https://github.com/javimosch/machin-anvil Pure-MFL, zero-dependency, OpenAI-compatible LLM runtime for small models (Llama/Qwen/xLAM/OLMoE-MoE) at ~20 tok/s on CPUs you own — and the anvil under a self-hosted coding agent. Forged from scratch; formerly machin-colibri.
+- https://github.com/Haven-AI-Companion/haven-llama Native C++ zero-drift LLM engine extension built on llama.cpp for Haven AI companions
+- https://github.com/crabml/crabml a fast cross platform AI inference engine 🤖 using Rust 🦀 and WebGPU 🎮
+- https://docs.liquid.ai/lfm/models/decision-models Decision models are a new class of AI model purpose-built for structured decisions. Instead of generating text token by token, a decision model evaluates a situation and returns calibrated probabilities across a fixed set of outcomes in a single call with zero generated tokens.
+- https://github.com/ggml-org/llama.cpp/compare/master...mudler:llama.cpp:feat/turbo-quant compare changes turboquant llamacpp
+- https://github.com/ggml-org/llama.cpp/pull/13194 kv-cache llamacpp
