@@ -613,10 +613,8 @@ impl Config {
         if (s.model_port_start..=s.model_port_end).contains(&s.control_port) {
             bail!("server.control_port is inside the model port range");
         }
-        for (k, v) in [("refuse_on_pressure", &self.governor.refuse_on_pressure)] {
-            if !["warn", "critical", "never"].contains(&v.as_str()) {
-                bail!("governor.{k} must be warn, critical or never");
-            }
+        if !["warn", "critical", "never"].contains(&self.governor.refuse_on_pressure.as_str()) {
+            bail!("governor.refuse_on_pressure must be warn, critical or never");
         }
         if !["refuse", "unload_lowest"].contains(&self.governor.pressure_policy.as_str()) {
             bail!("governor.pressure_policy must be refuse or unload_lowest");
