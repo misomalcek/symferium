@@ -199,8 +199,13 @@ async fn mlx_profile_rewrites_model_field() {
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn crashing_engine_ends_failed_and_port_says_why() {
     let tmp = tempfile::tempdir().unwrap();
+    // An engine that exits at once (a script, so the path exists on Linux and macOS alike).
+    let crash = tmp.path().join("crash.sh");
+    std::fs::write(&crash, "#!/bin/sh\nexit 1\n").unwrap();
+    std::fs::set_permissions(&crash, std::os::unix::fs::PermissionsExt::from_mode(0o755)).unwrap();
+    let crash = crash.to_string_lossy().into_owned();
     let rt = runtime(tmp.path(), 32000, big_machine(), |c| {
-        c.engines.get_mut("llamacpp").unwrap().binary = "/bin/false".into();
+        c.engines.get_mut("llamacpp").unwrap().binary = crash;
         c.server.proxy_wait_ready_s = 1;
     });
     let id = rt.library.list().iter().find(|e| e.format == "gguf").unwrap().id.clone();
