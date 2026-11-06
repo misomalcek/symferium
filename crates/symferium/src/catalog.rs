@@ -342,7 +342,17 @@ pub fn annotate_fit(m: &mut CatalogModel, cfg: &Config, geometry: Option<&Geomet
     }
 }
 
-fn wanted(m: &CatalogModel, q: &SearchQuery) -> bool {
+fn wanted(m: &CatalogModel, q: &SearchQuery, cfg: &Config) -> bool {
+    let c = &cfg.catalog;
+    if !c.formats.iter().any(|f| f == &m.format) {
+        return false;
+    }
+    if m.pipeline_tag.as_ref().is_some_and(|p| c.exclude_pipeline_tags.contains(p)) {
+        return false;
+    }
+    if m.downloads < c.min_downloads {
+        return false;
+    }
     if let Some(c) = &q.class {
         if &m.class != c {
             return false;
@@ -419,10 +429,16 @@ pub async fn search(rt: &Arc<Runtime>, q: &SearchQuery) -> Result<Vec<CatalogMod
         .ok_or_else(|| anyhow!("unexpected search answer"))?
         .iter()
         .map(|item| parse_model(item, &cfg))
-        .filter(|m| wanted(m, q))
+        .filter(|m| wanted(m, q, &cfg))
         .collect();
     for m in out.iter_mut() {
         annotate_fit(m, &cfg, None, b.headroom_bytes, b.cap_bytes, corr);
+        if cfg.catalog.hide_too_big {
+            m.quants.retain(|q| q.fit != "too_big");
+        }
+    }
+    if cfg.catalog.hide_too_big {
+        out.retain(|m| !m.quants.is_empty());
     }
     Ok(out)
 }
@@ -460,6 +476,9 @@ pub async fn detail(rt: &Arc<Runtime>, repo: &str) -> Result<CatalogModel> {
     }
     let b = rt.budget();
     annotate_fit(&mut m, &cfg, geometry.as_ref(), b.headroom_bytes, b.cap_bytes, 1.0);
+    if cfg.catalog.hide_too_big {
+        m.quants.retain(|q| q.fit != "too_big");
+    }
     m.detailed = true;
     Ok(m)
 }
@@ -566,7 +585,19 @@ mod tests {
     fn filters() {
         let cfg = Config::default();
         let m = parse_model(&fixture_gguf(), &cfg);
-        assert!(wanted(&m, &SearchQuery { vision: Some(true), class: Some("standard".into()), ..Default::default() }));
-        assert!(!wanted(&m, &SearchQuery { class: Some("small".into()), ..Default::default() }));
+        assert!(wanted(&m, &SearchQuery { vision: Some(true), class: Some("standard".into()), ..Default::default() }, &cfg));
+        assert!(!wanted(&m, &SearchQuery { class: Some("small".into()), ..Default::default() }, &cfg));
+        let mut img = m.clone();
+        img.pipeline_tag = Some("text-to-image".into());
+        assert!(!wanted(&img, &SearchQuery::default(), &cfg), "image generation is excluded");
+        let mut gguf_only = cfg.clone();
+        gguf_only.catalog.formats = vec!["gguf".into()];
+        let mut st = m.clone();
+        st.format = "safetensors".into();
+        assert!(wanted(&st, &SearchQuery::default(), &cfg), "original weights are offered (MLX loads them)");
+        assert!(!wanted(&st, &SearchQuery::default(), &gguf_only));
+        let mut rare = m;
+        rare.downloads = 3;
+        assert!(!wanted(&rare, &SearchQuery::default(), &cfg));
     }
 }

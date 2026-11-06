@@ -2,7 +2,7 @@
 
 A standalone local AI runtime for Apple Silicon. It downloads, loads and unloads many models at once (chat, vision, embeddings, rerankers, speech), serves each one on its own localhost port with an OpenAI-compatible API, and keeps every load inside a memory budget measured on the machine. It is managed from a browser UI and from a local API that agents can use.
 
-Start with `docs/PLAN.md` (architecture and decisions), then `docs/DEPLOY.md` (install on the Mac and run the gates). The brief and Michal's spec are `docs/BRIEF.md` and `docs/SPEC.md`; the symbiosis layer (v2) is designed in `docs/SYMBIOSIS.md`.
+Start with `docs/PLAN.md` (architecture and decisions), `docs/MODELS.md` (what the catalog offers), then `docs/DEPLOY.md` (install on the Mac and run the gates). The brief and Michal's spec are `docs/BRIEF.md` and `docs/SPEC.md`; the symbiosis layer (v2) is designed in `docs/SYMBIOSIS.md`.
 
 ## What runs
 

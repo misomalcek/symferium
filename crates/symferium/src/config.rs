@@ -128,6 +128,14 @@ pub struct CatalogConfig {
     pub large_max_b: f64,
     /// Preferred GGUF quants, best first.
     pub quant_preference: Vec<String>,
+    /// Repo formats offered (only ones an engine profile can load).
+    pub formats: Vec<String>,
+    /// Hugging Face pipeline tags never offered (image/video generation etc.).
+    pub exclude_pipeline_tags: Vec<String>,
+    /// Hide repos with fewer downloads than this (filters abandoned uploads).
+    pub min_downloads: u64,
+    /// Hide quants that can never fit this machine's ceiling.
+    pub hide_too_big: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -199,7 +207,16 @@ pub struct EngineProfile {
 pub struct SymbiosisConfig {
     pub enabled: bool,
     pub qdrant_url: String,
-    pub graph_url: String,
+    /// Existing qdrant collections the layer may read (e.g. Factorium's).
+    pub qdrant_read_collections: Vec<String>,
+    /// Collection Ghost writes its memories to (created if missing).
+    pub qdrant_write_collection: String,
+    /// Postgres connection string of the Apache AGE graph store.
+    #[serde(alias = "graph_url")]
+    pub age_dsn: String,
+    /// AGE graph name.
+    pub age_graph: String,
+    /// Raw memories folder.
     pub memory_dir: String,
     pub context_threshold: f64,
 }
@@ -304,6 +321,23 @@ impl Default for CatalogConfig {
                 .iter()
                 .map(|s| s.to_string())
                 .collect(),
+            formats: s(&["gguf", "mlx", "safetensors", "whisper", "onnx"]),
+            exclude_pipeline_tags: s(&[
+                "text-to-image",
+                "image-to-image",
+                "text-to-video",
+                "image-to-video",
+                "unconditional-image-generation",
+                "image-segmentation",
+                "object-detection",
+                "depth-estimation",
+                "text-to-3d",
+                "image-to-3d",
+                "reinforcement-learning",
+                "robotics",
+            ]),
+            min_downloads: 50,
+            hide_too_big: true,
         }
     }
 }
@@ -373,7 +407,10 @@ impl Default for SymbiosisConfig {
         Self {
             enabled: false,
             qdrant_url: "http://127.0.0.1:6333".into(),
-            graph_url: String::new(),
+            qdrant_read_collections: vec![],
+            qdrant_write_collection: "symferium_ghost".into(),
+            age_dsn: String::new(),
+            age_graph: "symferium".into(),
             memory_dir: String::new(),
             context_threshold: 0.7,
         }
@@ -829,6 +866,10 @@ static META: &[Meta] = &[
     m("catalog.standard_max_b", "Standard class upper bound (inclusive).").unit("B").range(0.1, 1000.0),
     m("catalog.large_max_b", "Largest model offered.").unit("B").range(0.1, 2000.0),
     m("catalog.quant_preference", "GGUF quants, best first."),
+    m("catalog.formats", "Repo formats offered: gguf, mlx, safetensors (original weights, loaded by MLX), whisper, onnx.").agent(),
+    m("catalog.exclude_pipeline_tags", "Hugging Face pipeline tags never offered."),
+    m("catalog.min_downloads", "Hide repos with fewer downloads.").range(0.0, 1e12).agent(),
+    m("catalog.hide_too_big", "Hide quants that can never fit this machine.").agent(),
     m("download.concurrent", "Downloads running at once.").range(1.0, 16.0).agent(),
     m("download.retries", "Retries per file before a download fails.").range(0.0, 100.0),
     m("download.verify_sha256", "Check every file against the Hugging Face sha256."),
@@ -869,7 +910,10 @@ static META: &[Meta] = &[
     m("engines.*.formats", "Model formats this profile loads."),
     m("symbiosis.enabled", "Symbiosis layer (v2). Off: requests pass through untouched."),
     m("symbiosis.qdrant_url", "Qdrant endpoint for Ghost and Whisper."),
-    m("symbiosis.graph_url", "Graph store endpoint for Heron and Nexus."),
+    m("symbiosis.qdrant_read_collections", "Qdrant collections the layer may read (one per line)."),
+    m("symbiosis.qdrant_write_collection", "Qdrant collection Ghost writes to."),
+    m("symbiosis.age_dsn", "Postgres + Apache AGE connection string, e.g. postgres://user@127.0.0.1:5432/db").secret(),
+    m("symbiosis.age_graph", "AGE graph name used by Heron and Nexus."),
     m("symbiosis.memory_dir", "Raw memories folder."),
     m("symbiosis.context_threshold", "Fraction of the context window at which Whisper compacts.").range(0.1, 0.99),
 ];

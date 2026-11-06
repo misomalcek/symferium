@@ -45,9 +45,9 @@ The model sees a prompt that always fits, and the full history stays recoverable
 
 | store | adapter | used by |
 |---|---|---|
-| qdrant (:6333) | HTTP; collections configurable, default `symferium_ghost`, read-only access to Factorium collections | Ghost, Whisper, Heron |
-| graph | **to confirm with Michal** (Neo4j, Postgres + AGE, or another) | Heron, Nexus |
-| raw memories folder | plain files, path configurable | Ghost (write), Heron (read) |
+| qdrant (:6333) | HTTP; reads `symbiosis.qdrant_read_collections` (e.g. Factorium's), writes `symbiosis.qdrant_write_collection` (default `symferium_ghost`) | Ghost, Whisper, Heron |
+| graph | Postgres + Apache AGE (`symbiosis.age_dsn`, `symbiosis.age_graph`), openCypher through `ag_catalog.cypher()` | Heron, Nexus |
+| raw memories folder | plain files, `symbiosis.memory_dir` (set by Michal) | Ghost (write), Heron (read) |
 | postgres (:5432) | optional, for the run ledger if the folder is not enough | Nexus |
 
 All endpoints, collections, paths, thresholds and schedules live in the same TOML and UI as the rest of Symferium.
