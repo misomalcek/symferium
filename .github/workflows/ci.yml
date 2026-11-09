@@ -1,0 +1,38 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with: { components: "clippy, rustfmt" }
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt --check
+      - run: cargo clippy --all-targets --locked -- -D warnings
+      - run: cargo test --locked
+
+  macos:
+    # Apple Silicon runner: real Metal probe, real llama.cpp, a 135M model from Hugging Face.
+    runs-on: macos-latest
+    if: github.event_name != 'push'
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo test --locked
+      - run: cargo build --release --locked
+      - run: brew install llama.cpp
+      - name: probe
+        run: target/release/symferium --config "$RUNNER_TEMP/probe.toml" probe
+      - name: smoke (M1 + M2 gates)
+        run: scripts/smoke.sh

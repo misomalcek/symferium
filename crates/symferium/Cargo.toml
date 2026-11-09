@@ -1,0 +1,55 @@
+[package]
+name = "symferium"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "Local multi-model AI runtime for Apple Silicon"
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "symferium"
+path = "src/main.rs"
+
+# Fake engine that speaks llama-server's HTTP; used by tests and CI smoke runs.
+[[bin]]
+name = "mock-engine"
+path = "src/bin/mock_engine.rs"
+
+[dependencies]
+anyhow = "1"
+thiserror = "2"
+async-stream = "0.3"
+axum = { version = "0.8", features = ["multipart"] }
+bytes = "1"
+clap = { version = "4", features = ["derive"] }
+dirs = "6"
+futures = "0.3"
+hex = "0.4"
+libc = "0.2"
+parking_lot = "0.12"
+regex = "1"
+reqwest = { version = "0.12", default-features = false, features = ["stream", "json", "http2"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+sysinfo = { version = "0.37", default-features = false, features = ["system"] }
+tokio = { version = "1", features = ["full"] }
+tokio-util = "0.7"
+toml = "0.9"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# macOS uses the system TLS (Security.framework, system trust store); elsewhere rustls.
+[target.'cfg(not(target_os = "macos"))'.dependencies]
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+reqwest = { version = "0.12", default-features = false, features = ["native-tls"] }
+objc2 = "0.6"
+objc2-metal = { version = "0.3", default-features = false, features = ["std", "MTLDevice"] }
+
+[dev-dependencies]
+tempfile = "3"

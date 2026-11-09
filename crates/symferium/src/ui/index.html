@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Symferium</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header>
+  <div class="brand">Symferium</div>
+  <nav id="tabs">
+    <button data-tab="overview" class="active">Overview</button>
+    <button data-tab="models">Models</button>
+    <button data-tab="catalog">Catalog</button>
+    <button data-tab="downloads">Downloads</button>
+    <button data-tab="bench">Bench</button>
+    <button data-tab="settings">Settings</button>
+    <button data-tab="events">Events</button>
+  </nav>
+  <div id="conn" class="pill">connecting…</div>
+</header>
+<main>
+  <section id="overview" class="tab active">
+    <div class="cards" id="machine"></div>
+    <h2>Memory budget</h2>
+    <div id="budget"></div>
+    <h2>Loaded models</h2>
+    <div id="instances"></div>
+  </section>
+
+  <section id="models" class="tab">
+    <div class="toolbar">
+      <input id="model-filter" placeholder="Filter local models">
+      <button id="rescan">Rescan folders</button>
+      <select id="preset-select" title="Model sets"></select>
+      <button id="preset-load">Load set</button>
+    </div>
+    <div id="local-models"></div>
+    <dialog id="load-dialog">
+      <form method="dialog" id="load-form">
+        <h3 id="load-title">Load model</h3>
+        <div class="grid2">
+          <label>Alias <input name="alias"></label>
+          <label>Engine <select name="engine"></select></label>
+          <label>Port <input name="port" type="number" placeholder="auto"></label>
+          <label>Context <input name="ctx" type="number" placeholder="class default"></label>
+          <label>Projector (mmproj) <input name="mmproj" placeholder="auto | none | path"></label>
+          <label>KV cache K / V <span class="row"><select name="cache_type_k"></select><select name="cache_type_v"></select></span></label>
+          <label class="span2">Extra params (key=value per line) <textarea name="params" rows="3"></textarea></label>
+          <label><input type="checkbox" name="persist" checked> Restore at login</label>
+        </div>
+        <div id="load-estimate" class="estimate"></div>
+        <div class="actions">
+          <button value="cancel" formnovalidate>Cancel</button>
+          <button id="estimate-btn" type="button">Estimate</button>
+          <button id="load-btn" type="button" class="primary">Load</button>
+        </div>
+      </form>
+    </dialog>
+  </section>
+
+  <section id="catalog" class="tab">
+    <form id="catalog-form" class="toolbar wrap">
+      <input name="q" placeholder="Search Hugging Face (e.g. gemma-4, qwen3, bge)">
+      <select name="class"><option value="">any class</option><option>small</option><option>standard</option><option>large</option><option>embed</option><option>rerank</option><option>decision</option><option>stt</option><option>tts</option></select>
+      <select name="format"><option value="">any format</option><option>gguf</option><option>mlx</option></select>
+      <select name="author" id="author-select"><option value="">any publisher</option></select>
+      <label><input type="checkbox" name="vision"> vision</label>
+      <label><input type="checkbox" name="tools"> tools</label>
+      <label><input type="checkbox" name="thinking"> thinking</label>
+      <button class="primary">Search</button>
+    </form>
+    <div id="catalog-results"></div>
+    <dialog id="repo-dialog"><div id="repo-detail"></div><form method="dialog" class="actions"><button>Close</button></form></dialog>
+  </section>
+
+  <section id="downloads" class="tab"><div id="download-list"></div></section>
+
+  <section id="bench" class="tab">
+    <p class="muted">Runs the same prompt on each model, one at a time, and records prefill and decode tok/s at the model's port. Pick builds of the same model on different engines (e.g. GGUF on llama.cpp and MLX) to choose the faster default.</p>
+    <div class="toolbar"><select id="bench-models" multiple size="6"></select><button id="bench-run" class="primary">Compare</button></div>
+    <div id="bench-results"></div>
+  </section>
+
+  <section id="settings" class="tab">
+    <div class="toolbar">
+      <input id="settings-filter" placeholder="Filter settings">
+      <label><input type="checkbox" id="agent-only"> agent-writable only</label>
+      <span class="muted" id="config-path"></span>
+    </div>
+    <div id="settings-form"></div>
+  </section>
+
+  <section id="events" class="tab"><pre id="event-log"></pre></section>
+</main>
+<div id="toast"></div>
+<script src="/app.js"></script>
+</body>
+</html>
