@@ -4,6 +4,10 @@ A standalone local AI runtime for Apple Silicon. It downloads, loads and unloads
 
 Start with `docs/PLAN.md` (architecture and decisions), `docs/MODELS.md` (what the catalog offers), then `docs/DEPLOY.md` (install on the Mac and run the gates). The brief and Michal's spec are `docs/BRIEF.md` and `docs/SPEC.md`; the symbiosis layer (v2) is designed in `docs/SYMBIOSIS.md`.
 
+<img src="https://github.com/misomalcek/symferium/blob/main/symferium-1.png" width="100">
+
+
+
 ## What runs
 
 ```
