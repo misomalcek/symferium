@@ -66,3 +66,9 @@ symferium config [--show]
 cargo test        # unit + end-to-end tests against a mock engine (no weights, no Metal needed)
 cargo clippy --all-targets -- -D warnings
 ```
+
+<img src="https://github.com/misomalcek/symferium/blob/main/symferium-2.png" width="100%">
+
+<img src="https://github.com/misomalcek/symferium/blob/main/symferium-3.png" width="100%">
+
+<img src="https://github.com/misomalcek/symferium/blob/main/symferium-4.png" width="100%">
